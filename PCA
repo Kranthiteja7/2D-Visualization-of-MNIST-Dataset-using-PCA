@@ -1,0 +1,71 @@
+# MNIST dataset downloaded from Kaggle : 
+#https://www.kaggle.com/c/digit-recognizer/data
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+d1=pd.read_csv('./mnist_train.csv')
+
+# print first five rows of d1.
+print(d0.head(5)) 
+
+# save the labels into a variable l.
+l = d0['label']
+
+# Drop the label feature and store the pixel data in d.
+d = d0.drop("label",axis=1)
+
+print(d.shape)
+print(l.shape)
+
+# display or plot a number.
+plt.figure(figsize=(7,7))
+i = 1
+grid_data = d.iloc[i].as_matrix().reshape(28,28)  # reshape from 1d to 2d pixel array
+plt.imshow(grid_data, interpolation = "none", cmap = "gray")
+plt.show()
+print(l[i])
+
+# Pick first 15K data-points to work on for time-effeciency.
+labels = l.head(15000)
+data = d.head(15000)
+print("the shape of sample data = ", data.shape)
+
+# Data-preprocessing: Standardizing the data
+from sklearn.preprocessing import StandardScaler
+standardized_data = StandardScaler().fit_transform(data)
+print(standardized_data.shape)
+
+#find the co-variance matrix which is : A^T * A
+sample_data = standardized_data
+# matrix multiplication using numpy
+covar_matrix = np.matmul(sample_data.T , sample_data)
+print ( "The shape of variance matrix = ", covar_matrix.shape)
+
+from scipy.linalg import eigh 
+values, vectors = eigh(covar_matrix, eigvals=(782,783))
+print("Shape of eigen vectors = ",vectors.shape)
+# converting the eigen vectors into (2,d) shape for easyness of further computations
+vectors = vectors.T
+print("Updated shape of eigen vectors = ",vectors.shape)
+
+# projecting the original data sample on the plane 
+#formed by two principal eigen vectors by vector-vector multiplication.
+import matplotlib.pyplot as plt
+new_coordinates = np.matmul(vectors, sample_data.T)
+print (" resultanat new data points' shape ", vectors.shape, "X", sample_data.T.shape," = ", new_coordinates.shape)
+
+import pandas as pd
+
+# appending label to the 2d projected data
+new_coordinates = np.vstack((new_coordinates, labels)).T
+
+# creating a new data frame for ploting the labeled points.
+dataframe = pd.DataFrame(data=new_coordinates, columns=("1st_principal", "2nd_principal", "label"))
+print(dataframe.head())
+
+# ploting the 2d data points with seaborn
+import seaborn as sn
+sn.FacetGrid(dataframe, hue="label", size=6).map(plt.scatter, '1st_principal', '2nd_principal').add_legend()
+plt.show()
